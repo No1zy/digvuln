@@ -1,6 +1,7 @@
 import requests
 import sys
 import re
+import os
 import argparse
 from bs4 import BeautifulSoup
 
@@ -16,6 +17,7 @@ ENDC = "\033[0m"
 parser = argparse.ArgumentParser()
 parser.add_argument('url', help='Scan URL')
 parser.add_argument('--login', '-l', help='Login data')
+parser.add_argument('--store', '-s', help='store XSS sink URL')
 args = parser.parse_args()
 
 #ログインする
@@ -24,7 +26,7 @@ args = parser.parse_args()
 def login(payload):
     login = url + "/login.php"
     r = requests.post(login, data=payload, allow_redirects=False)
-    if r.text in "Logout":
+    if r.cookies:
         return r.cookies
     return False
 
@@ -40,19 +42,45 @@ def split_data(data):
         payload.update(data)
     return payload
 
+def is_current_dir(path):    
+    current_patte = "^\.\/.*|^(?!.*\/).*$"
+    current_dir_reg = re.compile(current_patte)
+    return True if current_dir_reg.match(path) else False
+
 #結果を表示
 # @param dict payload
 #        string target
 # @return void
-def print_vuln(payload, target):
+def print_vuln(place, target):
     print(FAIL + "Vulnable!!" + ENDC)
-    print(WARNING + "Request params" + ENDC)
-    for key, val in payload.items():
-        print("\t" + key + " : " + val)
+    
+    print(WARNING + "Vulnerable place" + ENDC)
+    print("\t" + place)
 
-
+#リクエストパラメータを探索＆追加処理
+def dig_param(target,cookies):
+    r = requests.get(target, cookies=cookies)
+    bs = BeautifulSoup(r.text, "html.parser")
+    forms = bs.find_all("form")
+    payload = dict()
+    for elm in forms:
+        method = elm.get("method") if elm.get("method") else "get"     #HTTPメソッド
+        bs = BeautifulSoup(str(elm), "html.parser")
+        children = bs.find_all()
+        for child in children:
+            name = child.get("name")
+            #タグにname属性があったら
+            if name is not None:
+                if child.option:
+                    tmp = {name: child.option.get("value") if child.option.get("value") else ''}
+                else:
+                    tmp = {name: child.get("value") if child.get("value") else ''}
+                #リクエストパラメータに追加
+                payload.update(tmp)
+    return payload
 url = args.url
 login_data = args.login
+store_sink = args.store
 cookies = ""
 
 # loginオプションが設定されていたら
@@ -68,10 +96,13 @@ r = requests.get(url, cookies=cookies)
 bs = BeautifulSoup(r.text, "html.parser")
 links = bs.find_all("a")
 link_list = list()
+
 for link in links:
     href = link.get("href")
     if href is None:
         continue
+    if is_current_dir(href):
+        href = href.replace("./", "")
     link_list.append(href)
 target = url
 
@@ -88,51 +119,51 @@ if len(link_list) > 0:
         print(FAIL + "Out of range number" + ENDC)
         exit(2)
     number = int(number) - 1
-    target = url + link_list[number]
+    #生成するURLを分ける
+    dirname = os.path.dirname(url)
+    file_reg = re.compile("^/.*$")
+    http_reg = re.compile("^http.*:$")
+    if file_reg.match(link_list[number]):
+        base_address = dirname
+        #base addressが取得できるまで
+        while True:
+            tmp = os.path.dirname(base_address)
+            if http_reg.match(tmp):
+                break
+            base_address = tmp
+        target = base_address + link_list[number]
+    elif http_reg.match(dirname):
+        target = url + "/" + link_list[number]
+    elif len(os.path.basename(url)) != 0:
+        target = dirname + "/" + link_list[number]
+    else:
+        target = dirname + "/" + link_list[number]
+#    else:
+#        target = url + "/" + link_list[number]
     print(FAIL + "Target url : " + ENDC + target + "\n")
 
-#リクエストパラメータを探索＆追加処理
-r = requests.get(target, cookies=cookies)
-bs = BeautifulSoup(r.text, "html.parser")
-forms = bs.find_all("form")
-payload = dict()
-for elm in forms:
-    method = elm.get("method") if elm.get("method") else "get"     #HTTPメソッド
-    bs = BeautifulSoup(str(elm), "html.parser")
-    children = bs.find_all()
-    for child in children:
-        name = child.get("name")
-        #タグにname属性があったら
-        if name is not None:
-            if child.option:
-                tmp = {name: child.option.get(
-                    "value") if child.option.get("value") else ''}
-            else:
-                tmp = {name: child.get("value") if child.get("value") else ''}
-            #リクエストパラメータに追加
-            payload.update(tmp)
+payload = dig_param(target, cookies)
+
 
 #XSS診断
+flag = False  #診断可否フラグ
 for key, value in payload.items():
     with open("xss.txt", "r") as f:
         xss = True    #xss ペイロード
-        flag = False  #診断可否フラグ
         while flag != True and xss:
             xss = f.readline()
             payload[key] = xss
-
             r = requests.post(target, data=payload, cookies=cookies)
-            #TODO: ストア型XSSの判断処理の実装
-            #r = requests.get(index, cookies=cookies)
+            if store_sink is not None:
+                payload = dig_param(store_sink, cookies)
+                r = requests.get(store_sink, params=payload, cookies=cookies)
             bs = BeautifulSoup(r.text, "html.parser")
-            #a = bs.find("a", href=re.compile(".*readdiary.*"))
-            #href = a.get("href")
-            #r = requests.get(url + target, cookies=cookies)
-            #bs = BeautifulSoup(r.text, "html.parser")
             list_all = bs.find_all()
             for elm in list_all:
                 if str(elm) in xss:
-                    print_vuln(payload, target)
+                    print_vuln(str(elm), target)
                     flag = True
             #restore payload
             payload[key] = value
+if flag is False:
+    print(OKGREEN + "Not found vulnerability" + ENDC)
