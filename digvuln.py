@@ -21,8 +21,10 @@ parser.add_argument('--store', '-s', help='store XSS sink URL')
 args = parser.parse_args()
 
 #ログインする
-# @param dict payload    
+# @param dict payload
 # @return cookie　ログインできなかったらFalse
+
+
 def login(payload):
     login = url + "/login.php"
     r = requests.post(login, data=payload, allow_redirects=False)
@@ -33,6 +35,8 @@ def login(payload):
 #引数のデータを分割する
 # @param string data
 # @return dict payload
+
+
 def split_data(data):
     tmp = data.split("&")
     payload = dict()
@@ -42,7 +46,8 @@ def split_data(data):
         payload.update(data)
     return payload
 
-def is_current_dir(path):    
+
+def is_current_dir(path):
     current_patte = "^\.\/.*|^(?!.*\/).*$"
     current_dir_reg = re.compile(current_patte)
     return True if current_dir_reg.match(path) else False
@@ -53,18 +58,17 @@ def is_current_dir(path):
 # @return void
 def print_vuln(place, target):
     print(FAIL + "Vulnable!!" + ENDC)
-    
     print(WARNING + "Vulnerable place" + ENDC)
     print("\t" + place)
 
 #リクエストパラメータを探索＆追加処理
-def dig_param(target,cookies):
+def dig_param(target, cookies):
     r = requests.get(target, cookies=cookies)
     bs = BeautifulSoup(r.text, "html.parser")
     forms = bs.find_all("form")
     payload = dict()
     for elm in forms:
-        method = elm.get("method") if elm.get("method") else "get"     #HTTPメソッド
+        method = elm.get("method") if elm.get("method") else "get"  # HTTPメソッド
         bs = BeautifulSoup(str(elm), "html.parser")
         children = bs.find_all()
         for child in children:
@@ -78,6 +82,8 @@ def dig_param(target,cookies):
                 #リクエストパラメータに追加
                 payload.update(tmp)
     return payload
+
+
 url = args.url
 login_data = args.login
 store_sink = args.store
@@ -107,7 +113,7 @@ for link in links:
 target = url
 
 
-i = 1    #ターゲットリストのindex
+i = 1  # ターゲットリストのindex
 # ターゲットリストが1以上だったら
 if len(link_list) > 0:
     print(OKBLUE + "Please select Target." + ENDC)
@@ -138,22 +144,20 @@ if len(link_list) > 0:
         target = dirname + "/" + link_list[number]
     else:
         target = dirname + "/" + link_list[number]
-#    else:
-#        target = url + "/" + link_list[number]
     print(FAIL + "Target url : " + ENDC + target + "\n")
 
 payload = dig_param(target, cookies)
 
-
 #XSS診断
-flag = False  #診断可否フラグ
+flag = False  # 診断可否フラグ
 for key, value in payload.items():
     with open("xss.txt", "r") as f:
-        xss = True    #xss ペイロード
+        xss = True  # xss ペイロード
         while flag != True and xss:
             xss = f.readline()
             payload[key] = xss
             r = requests.post(target, data=payload, cookies=cookies)
+            # storeオプションが設定されていたら指定されたURLを見にいく
             if store_sink is not None:
                 payload = dig_param(store_sink, cookies)
                 r = requests.get(store_sink, params=payload, cookies=cookies)
@@ -163,7 +167,7 @@ for key, value in payload.items():
                 if str(elm) in xss:
                     print_vuln(str(elm), target)
                     flag = True
-            #restore payload
+            #payloadを元に戻す
             payload[key] = value
 if flag is False:
     print(OKGREEN + "Not found vulnerability" + ENDC)
