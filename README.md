@@ -1,6 +1,6 @@
 # Usage
 
-## python digvuln.py <url>
+## cd webspider; python digvuln.py <url>
 example:
 python digvuln.py http://192.168.1.1/
 

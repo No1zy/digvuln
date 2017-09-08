@@ -1,0 +1,3 @@
+*.json
+digsqli.py
+__pycache__
