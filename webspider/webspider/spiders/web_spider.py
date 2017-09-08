@@ -12,7 +12,7 @@ class webSpider(scrapy.Spider):
 
     def start_requests(self):
 
-        url = "http://172.17.100.172/bss"
+        url = ""
         cookies = None
         # コマンドラインから渡した引数は、デフォルトでSpiderのアトリビュートとして取得することができます。
         # 今回の場合、self.categoriesで引数の値を取得できます。

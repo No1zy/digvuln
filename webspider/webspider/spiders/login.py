@@ -2,7 +2,7 @@ import scrapy
 
 class LoginSpider(scrapy.Spider):
     name = 'login'
-    start_urls = ['http://172.17.100.172/stored_xss/login.php']
+    start_urls = []
 
     def start_requests(self):
 
@@ -10,7 +10,7 @@ class LoginSpider(scrapy.Spider):
                  'dont_redirect' : True,
                  'handle_httpstatus_list': [302],
              } 
-        url = "http://172.17.100.172/bss/web3/login.php"
+        url = ""
         # コマンドラインから渡した引数は、デフォルトでSpiderのアトリビュートとして取得することができます。
         # 今回の場合、self.categoriesで引数の値を取得できます。
         target = getattr(self, 'target', None)
